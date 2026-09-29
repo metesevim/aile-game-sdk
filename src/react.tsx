@@ -75,6 +75,76 @@ export function useProfile() {
   return useAsync<Profile>(() => client.connect(), [client]);
 }
 
+export interface AuthState {
+  profile: Profile | null;
+  loading: boolean;
+  /** Token yok: kullanıcıya demo giriş ekranı gösterilmeli. */
+  needsLogin: boolean;
+  /** Sunucuya ulaşılamadı gibi gerçek hatalar. */
+  error: string | null;
+  loginDemo: (name: string) => Promise<void>;
+  signOut: () => void;
+}
+
+/**
+ * Oturum durumunu yönetir. App içinde token köprüden gelir; tarayıcıda token
+ * yoksa `needsLogin` true olur ve oyun demo giriş ekranını gösterir.
+ */
+export function useAuth(): AuthState {
+  const client = useGameClient();
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [needsLogin, setNeedsLogin] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      setProfile(await client.connect());
+      setNeedsLogin(false);
+    } catch (err) {
+      setProfile(null);
+      if (err instanceof GameApiError && (err.code === "no_app_token" || err.status === 401)) {
+        setNeedsLogin(true);
+      } else {
+        setError(err instanceof GameApiError ? err.message : "Sunucuya ulaşılamadı.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [client]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const loginDemo = useCallback(
+    async (name: string) => {
+      setLoading(true);
+      setError(null);
+      try {
+        setProfile(await client.demoLogin(name));
+        setNeedsLogin(false);
+      } catch (err) {
+        setError(err instanceof GameApiError ? err.message : "Giriş yapılamadı.");
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [client],
+  );
+
+  const signOut = useCallback(() => {
+    client.signOut();
+    setProfile(null);
+    setNeedsLogin(true);
+  }, [client]);
+
+  return { profile, loading, needsLogin, error, loginDemo, signOut };
+}
+
 export function useLeaderboard(scope: LeaderboardScope, period: LeaderboardPeriod) {
   const client = useGameClient();
   return useAsync<Leaderboard>(() => client.leaderboard(scope, period), [client, scope, period]);

@@ -1,4 +1,4 @@
-import { resolveAppToken } from "./bridge.js";
+import { clearToken, resolveAppToken, storeToken } from "./bridge.js";
 import type {
   FriendRequest,
   FriendSummary,
@@ -102,6 +102,34 @@ export class GameClient {
       return this.request<T>(path, init, false);
     }
     return (await this.parse(res)) as T;
+  }
+
+  /**
+   * Demo girişi: mobil app olmadan oynamak için. Sunucu yeni bir demo kullanıcı
+   * açar; girilen isim yalnızca görünen addır. Token tarayıcıda saklanır.
+   */
+  async demoLogin(name: string): Promise<Profile> {
+    const res = await fetch(`${this.opts.apiUrl}/api/auth/demo`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ name }),
+    });
+    const data = (await this.parse(res)) as { appToken: string };
+    storeToken(data.appToken);
+    this.signOutLocal();
+    return this.connect();
+  }
+
+  /** Saklanan token'ı siler ve istemciyi sıfırlar. */
+  signOut(): void {
+    clearToken();
+    this.signOutLocal();
+  }
+
+  private signOutLocal(): void {
+    this.gameToken = null;
+    this.profile = null;
+    this.tokenExpiresAt = 0;
   }
 
   me(): Promise<Profile> {

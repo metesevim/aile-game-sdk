@@ -75,17 +75,42 @@ function tokenFromUrl(): string | null {
 
   // Tarayıcıda geliştirirken sayfa yenilendiğinde token kaybolmasın.
   // App içinde gerek yok: köprü token'ı her açılışta yeniden verir.
-  if (!isInsideApp()) {
-    try {
-      window.sessionStorage.setItem("aile.token", fromHash);
-    } catch {
-      /* gizli sekmede sessionStorage kapalı olabilir */
-    }
-  }
+  if (!isInsideApp()) storeToken(fromHash);
   return fromHash;
 }
 
-/** Token'ı köprüden çözer. App içinde değilsek dev token'a düşer. */
+const TOKEN_KEY = "aile.token";
+
+/** Token'ı tarayıcıda saklar (demo girişi ve sayfa yenileme için). */
+export function storeToken(token: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(TOKEN_KEY, token);
+  } catch {
+    /* depolama kapalı olabilir */
+  }
+}
+
+export function clearToken(): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.removeItem(TOKEN_KEY);
+    window.sessionStorage.removeItem(TOKEN_KEY);
+  } catch {
+    /* depolama kapalı olabilir */
+  }
+}
+
+function readStoredToken(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.sessionStorage.getItem(TOKEN_KEY) ?? window.localStorage.getItem(TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+/** Token'ı köprüden çözer. App içinde değilsek saklanan token'a ya da dev token'a düşer. */
 export async function resolveAppToken(timeoutMs = 3000): Promise<string | null> {
   const fromUrl = tokenFromUrl();
   if (fromUrl) return fromUrl;
@@ -95,13 +120,13 @@ export async function resolveAppToken(timeoutMs = 3000): Promise<string | null> 
     // Next.js derleme sırasında process.env.NEXT_PUBLIC_* değerini sabite çevirir;
     // @types/node bağımlılığı olmadan okumak için globalThis üzerinden bakıyoruz.
     const env = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env;
-    let stored: string | null = null;
+    let devToken: string | null = null;
     try {
-      stored = window.sessionStorage.getItem("aile.token") ?? window.localStorage.getItem("aile.devToken");
+      devToken = window.localStorage.getItem("aile.devToken");
     } catch {
       /* depolama kapalı */
     }
-    return stored ?? env?.NEXT_PUBLIC_DEV_TOKEN ?? null;
+    return readStoredToken() ?? devToken ?? env?.NEXT_PUBLIC_DEV_TOKEN ?? null;
   }
 
   return new Promise((resolve) => {

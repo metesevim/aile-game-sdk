@@ -18,6 +18,10 @@
     "./ui": {
       "types": "./dist/ui.d.ts",
       "default": "./dist/ui.js"
+    },
+    "./gate": {
+      "types": "./dist/gate.d.ts",
+      "default": "./dist/gate.js"
     }
   },
   "files": [
@@ -25,7 +29,8 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "dev": "tsc -p tsconfig.json --watch"
+    "dev": "tsc -p tsconfig.json --watch",
+    "prepare": "npm run build"
   },
   "peerDependencies": {
     "react": ">=18"
@@ -38,5 +43,9 @@
   "devDependencies": {
     "@types/react": "^19.0.0",
     "typescript": "^5.7.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/metesevim/aile-game-sdk.git"
   }
 }
