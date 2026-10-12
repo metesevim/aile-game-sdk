@@ -154,6 +154,10 @@ export class SoundPlayer {
       (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!Ctor) return null;
     try {
+      // iOS 17+: "playback" oturumu sesi telefonun sessiz modundan bağımsız kılar;
+      // aksi halde sessiz anahtarı açıkken Web Audio hiç ses çıkarmaz.
+      const session = (navigator as unknown as { audioSession?: { type: string } }).audioSession;
+      if (session) session.type = "playback";
       const ctx = new Ctor();
       const comp = ctx.createDynamicsCompressor();
       comp.threshold.value = -14;
@@ -249,7 +253,12 @@ export class SoundPlayer {
   }
 }
 
-const UNLOCK_EVENTS = ["pointerdown", "touchstart", "keydown"] as const;
+/**
+ * Tarayıcılar sesi yalnızca "kullanıcı etkinleştirmesi" sayılan olaylarda açar.
+ * iOS Safari dokunmada touchstart/pointerdown'ı saymaz, parmak kalkınca (touchend,
+ * click) sayar; hepsini dinleyip hangisi önce işe yararsa onu kullanıyoruz.
+ */
+const UNLOCK_EVENTS = ["pointerdown", "touchstart", "touchend", "pointerup", "click", "keydown"] as const;
 
 interface Kit {
   tone(
