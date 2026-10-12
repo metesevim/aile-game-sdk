@@ -8,9 +8,11 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
 import { createGameClient, GameApiError, type GameClient } from "./client.js";
+import { installButtonSounds, sound } from "./sound.js";
 import type {
   FriendRequest,
   FriendSummary,
@@ -25,13 +27,17 @@ const Ctx = createContext<GameClient | null>(null);
 export function GameProvider({
   apiUrl,
   gameId,
+  /** Tüm düğmelere otomatik "tap" sesi. Ayrıntı: `installButtonSounds`. */
+  buttonSounds = true,
   children,
 }: {
   apiUrl: string;
   gameId: string;
+  buttonSounds?: boolean;
   children: ReactNode;
 }) {
   const client = useMemo(() => createGameClient({ apiUrl, gameId }), [apiUrl, gameId]);
+  useEffect(() => (buttonSounds ? installButtonSounds() : undefined), [buttonSounds]);
   return <Ctx.Provider value={client}>{children}</Ctx.Provider>;
 }
 
@@ -218,4 +224,25 @@ export function useGameSession() {
   );
 
   return { sessionId, seed, start, submit, submitting, lastResult, error, online: sessionId !== null };
+}
+
+/**
+ * Ses ayarları + çalma fonksiyonu.
+ *   const { play, muted, toggleMuted } = useSound();
+ */
+export function useSound() {
+  const subscribe = useCallback((fn: () => void) => sound.subscribe(fn), []);
+  const muted = useSyncExternalStore(subscribe, () => sound.muted, () => false);
+  const haptics = useSyncExternalStore(subscribe, () => sound.haptics, () => true);
+  const volume = useSyncExternalStore(subscribe, () => sound.volume, () => sound.volume);
+  return {
+    play: sound.play.bind(sound),
+    muted,
+    haptics,
+    volume,
+    setMuted: sound.setMuted.bind(sound),
+    toggleMuted: sound.toggleMuted.bind(sound),
+    setHaptics: sound.setHaptics.bind(sound),
+    setVolume: sound.setVolume.bind(sound),
+  };
 }

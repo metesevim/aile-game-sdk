@@ -19,6 +19,10 @@
       "types": "./dist/ui.d.ts",
       "default": "./dist/ui.js"
     },
+    "./sound": {
+      "types": "./dist/sound.d.ts",
+      "default": "./dist/sound.js"
+    },
     "./gate": {
       "types": "./dist/gate.d.ts",
       "default": "./dist/gate.js"
