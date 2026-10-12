@@ -402,9 +402,34 @@ export function FriendsPanel({
   );
 }
 
-/** Sesi aç/kapa düğmesi. Tercih cihazda saklanır, tüm oyunlarda geçerlidir. */
-export function SoundToggle({ size = 40, style }: { size?: number; style?: CSSProperties }) {
+/**
+ * Sesi aç/kapa düğmesi. Tercih cihazda saklanır, tüm oyunlarda geçerlidir.
+ * `className` verilirse görünüm oyunun CSS'ine bırakılır (ör. üst bardaki "icon-btn").
+ */
+export function SoundToggle({
+  size = 40,
+  className,
+  style,
+}: {
+  size?: number;
+  className?: string;
+  style?: CSSProperties;
+}) {
   const { muted, toggleMuted } = useSound();
+  const look: CSSProperties = className
+    ? { opacity: muted ? 0.6 : 1 }
+    : {
+        width: size,
+        height: size,
+        borderRadius: size,
+        border: `1px solid ${T.border}`,
+        background: T.card,
+        color: muted ? T.muted : T.fg,
+        display: "grid",
+        placeItems: "center",
+        cursor: "pointer",
+        padding: 0,
+      };
   return (
     <button
       type="button"
@@ -417,19 +442,8 @@ export function SoundToggle({ size = 40, style }: { size?: number; style?: CSSPr
       aria-label={muted ? "Sesi aç" : "Sesi kapat"}
       aria-pressed={!muted}
       title={muted ? "Sesi aç" : "Sesi kapat"}
-      style={{
-        width: size,
-        height: size,
-        borderRadius: size,
-        border: `1px solid ${T.border}`,
-        background: T.card,
-        color: muted ? T.muted : T.fg,
-        display: "grid",
-        placeItems: "center",
-        cursor: "pointer",
-        padding: 0,
-        ...style,
-      }}
+      className={className}
+      style={{ ...look, ...style }}
     >
       <svg width={size * 0.5} height={size * 0.5} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
         <path d="M11 5 6 9H3v6h3l5 4V5z" fill="currentColor" />

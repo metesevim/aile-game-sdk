@@ -63,7 +63,7 @@ import { SoundToggle } from "@aile/game-sdk/ui";
 sound.play("dice");
 sound.play("reveal", { pitch: i * 2 }); // harf harf yükselen açılış
 
-<SoundToggle />; // üst bara sessize alma düğmesi
+<SoundToggle className="icon-btn" />; // üst bara sessize alma düğmesi (className yoksa hazır görünüm)
 ```
 
 Kendi sesini çalan düğmeye `data-sound="off"` koy ki "tap" ile üst üste binmesin; farklı ses için
