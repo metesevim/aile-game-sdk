@@ -10,7 +10,7 @@
  *   sound.play("reveal", { pitch: i * 2 }); // harf harf yükselen açılış
  */
 
-import { onNativeMessage, sendToNative } from "./bridge.js";
+import { onNativeMessage } from "./bridge.js";
 
 export type SoundName =
   /** Genel arayüz düğmesi. */
@@ -51,20 +51,7 @@ export interface PlayOptions {
   pitch?: number;
 }
 
-type Haptic = "light" | "medium" | "heavy" | "success" | "error";
-
-/** App içindeyken sesle birlikte gönderilen titreşim. Arayüz tuşlarına titreşim yok. */
-const HAPTICS: Partial<Record<SoundName, Haptic>> = {
-  dice: "medium",
-  move: "light",
-  hit: "heavy",
-  bearOff: "light",
-  error: "error",
-  win: "success",
-};
-
 const MUTE_KEY = "aile:sound-muted";
-const HAPTIC_KEY = "aile:haptics-off";
 /** Aynı ses bu süreden sık tetiklenirse yutulur (çift olay, hızlı tekrar). */
 const MIN_GAP_MS = 25;
 
@@ -97,22 +84,16 @@ export class SoundPlayer {
   private listeners = new Set<Listener>();
   private installed = false;
   private _muted = false;
-  private _haptics = true;
   private _volume = 0.7;
 
   constructor() {
     if (typeof window === "undefined") return;
     this._muted = readFlag(MUTE_KEY);
-    this._haptics = !readFlag(HAPTIC_KEY);
     this.install();
   }
 
   get muted(): boolean {
     return this._muted;
-  }
-
-  get haptics(): boolean {
-    return this._haptics;
   }
 
   get volume(): number {
@@ -130,20 +111,13 @@ export class SoundPlayer {
     this.setMuted(!this._muted);
   }
 
-  setHaptics(on: boolean): void {
-    if (on === this._haptics) return;
-    this._haptics = on;
-    writeFlag(HAPTIC_KEY, !on);
-    this.emit();
-  }
-
   setVolume(v: number): void {
     this._volume = Math.min(1, Math.max(0, v));
     if (this.master) this.master.gain.value = this._volume;
     this.emit();
   }
 
-  /** Durum değişince (sessiz, titreşim, ses seviyesi) çağrılır. */
+  /** Durum değişince (sessiz, ses seviyesi) çağrılır. */
   subscribe(fn: Listener): () => void {
     this.listeners.add(fn);
     return () => this.listeners.delete(fn);
@@ -155,9 +129,6 @@ export class SoundPlayer {
     const now = performance.now();
     if (now - (this.last.get(name) ?? -Infinity) < MIN_GAP_MS) return;
     this.last.set(name, now);
-
-    const haptic = HAPTICS[name];
-    if (haptic && this._haptics) sendToNative({ type: "AILE_HAPTIC", style: haptic });
 
     if (this._muted) return;
     const ctx = this.context();
@@ -378,6 +349,7 @@ export const sound = new SoundPlayer();
 /**
  * Sayfadaki tüm düğmelere otomatik "tap" sesi ekler (event delegation).
  * Bir düğmeyi kapatmak için `data-sound="off"`, farklı ses için `data-sound="key"`.
+ * Öznitelik bir kapsayıcıya da konabilir: `<div data-sound="off">` içindeki hiçbir düğme ses çalmaz.
  * Oyun kendi sesini çalan düğmelere `data-sound="off"` koymalı ki iki ses üst üste binmesin.
  */
 export function installButtonSounds(root: Document | HTMLElement = document): () => void {
@@ -385,7 +357,7 @@ export function installButtonSounds(root: Document | HTMLElement = document): ()
     const target = event.target as Element | null;
     const el = target?.closest?.("button, [role='button'], [data-sound]");
     if (!el || (el as HTMLButtonElement).disabled || el.getAttribute("aria-disabled") === "true") return;
-    const attr = el.getAttribute("data-sound");
+    const attr = el.closest("[data-sound]")?.getAttribute("data-sound");
     if (attr === "off") return;
     const name = (attr && attr in RECIPES ? attr : "tap") as SoundName;
     sound.play(name);

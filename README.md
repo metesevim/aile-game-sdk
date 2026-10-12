@@ -69,8 +69,10 @@ sound.play("reveal", { pitch: i * 2 }); // harf harf yükselen açılış
 Kendi sesini çalan düğmeye `data-sound="off"` koy ki "tap" ile üst üste binmesin; farklı ses için
 `data-sound="key"`. Otomatik düğme sesini tamamen kapatmak: `<GameProvider buttonSounds={false}>`.
 
-App içindeyken `dice`, `move`, `hit`, `bearOff`, `error`, `win` seslerine titreşim (AILE_HAPTIC) eşlik
-eder. Sessiz tercihi cihazda saklanır; app arka plana geçince (AILE_PAUSE) ses askıya alınır.
+`data-sound` bir kapsayıcıya da konabilir: `<div data-sound="off">` içindeki düğmeler (ör. tahta
+haneleri) ses çalmaz. Titreşim sesten bağımsızdır, oyun `haptic()` ile ayrıca çağırır; böylece ses
+kapalıyken de titreşim sürer. Sessiz tercihi cihazda saklanır; app arka plana geçince (AILE_PAUSE)
+ses askıya alınır.
 
 | Oyun | An | Ses |
 | --- | --- | --- |

@@ -233,16 +233,13 @@ export function useGameSession() {
 export function useSound() {
   const subscribe = useCallback((fn: () => void) => sound.subscribe(fn), []);
   const muted = useSyncExternalStore(subscribe, () => sound.muted, () => false);
-  const haptics = useSyncExternalStore(subscribe, () => sound.haptics, () => true);
   const volume = useSyncExternalStore(subscribe, () => sound.volume, () => sound.volume);
   return {
     play: sound.play.bind(sound),
     muted,
-    haptics,
     volume,
     setMuted: sound.setMuted.bind(sound),
     toggleMuted: sound.toggleMuted.bind(sound),
-    setHaptics: sound.setHaptics.bind(sound),
     setVolume: sound.setVolume.bind(sound),
   };
 }
