@@ -7,7 +7,8 @@
  */
 
 import { useState, type CSSProperties } from "react";
-import { useFriendRequests, useFriends, useGameClient, useLeaderboard } from "./react.js";
+import { useFriendRequests, useFriends, useGameClient, useLeaderboard, useSound } from "./react.js";
+import { sound } from "./sound.js";
 import type { LeaderboardPeriod, LeaderboardScope } from "./types.js";
 
 const T = {
@@ -398,5 +399,60 @@ export function FriendsPanel({
         ))}
       </section>
     </div>
+  );
+}
+
+/**
+ * Sesi aç/kapa düğmesi. Tercih cihazda saklanır, tüm oyunlarda geçerlidir.
+ * `className` verilirse görünüm oyunun CSS'ine bırakılır (ör. üst bardaki "icon-btn").
+ */
+export function SoundToggle({
+  size = 40,
+  className,
+  style,
+}: {
+  size?: number;
+  className?: string;
+  style?: CSSProperties;
+}) {
+  const { muted, toggleMuted } = useSound();
+  const look: CSSProperties = className
+    ? { opacity: muted ? 0.6 : 1 }
+    : {
+        width: size,
+        height: size,
+        borderRadius: size,
+        border: `1px solid ${T.border}`,
+        background: T.card,
+        color: muted ? T.muted : T.fg,
+        display: "grid",
+        placeItems: "center",
+        cursor: "pointer",
+        padding: 0,
+      };
+  return (
+    <button
+      type="button"
+      data-sound="off"
+      onClick={() => {
+        toggleMuted();
+        // Açılınca geri bildirim: ses gerçekten açıldı mı duyulsun.
+        if (muted) sound.play("tap");
+      }}
+      aria-label={muted ? "Sesi aç" : "Sesi kapat"}
+      aria-pressed={!muted}
+      title={muted ? "Sesi aç" : "Sesi kapat"}
+      className={className}
+      style={{ ...look, ...style }}
+    >
+      <svg width={size * 0.5} height={size * 0.5} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d="M11 5 6 9H3v6h3l5 4V5z" fill="currentColor" />
+        {muted ? (
+          <path d="m22 9-6 6M16 9l6 6" />
+        ) : (
+          <path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13" />
+        )}
+      </svg>
+    </button>
   );
 }
