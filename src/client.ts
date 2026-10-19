@@ -6,9 +6,12 @@ import type {
   Leaderboard,
   LeaderboardPeriod,
   LeaderboardScope,
+  PoolWord,
   Profile,
   SubmitScoreInput,
   SubmitScoreResult,
+  WordCheck,
+  WordQuery,
 } from "./types.js";
 
 export class GameApiError extends Error {
@@ -187,6 +190,25 @@ export class GameClient {
       method: "POST",
       body: JSON.stringify({ action }),
     });
+  }
+
+  /**
+   * Kelime havuzundan rastgele kelimeler. Kelimematik oyun başında bir kez
+   * çağırır; sözlük sunucuda durduğu için oyun dosyasında kelime taşımıyoruz.
+   */
+  async words(query: WordQuery = {}): Promise<PoolWord[]> {
+    const qs = new URLSearchParams();
+    if (query.count) qs.set("count", String(query.count));
+    if (query.minLength) qs.set("minLength", String(query.minLength));
+    if (query.maxLength) qs.set("maxLength", String(query.maxLength));
+    if (query.difficulty?.length) qs.set("difficulty", query.difficulty.join(","));
+    const data = await this.request<{ words: PoolWord[] }>(`/api/words?${qs}`);
+    return data.words;
+  }
+
+  /** Yazılan kelime sözlükte var mı? */
+  checkWord(word: string): Promise<WordCheck> {
+    return this.request<WordCheck>(`/api/words/validate?word=${encodeURIComponent(word)}`);
   }
 
   removeFriend(userId: string): Promise<{ ok: true }> {

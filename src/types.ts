@@ -86,3 +86,27 @@ export interface ApiError {
   message: string;
   status: number;
 }
+
+/** Sunucudaki kelime havuzundan gelen bir kelime. */
+export interface PoolWord {
+  word: string;
+  length: number;
+  /** 1 kolay, 2 orta, 3 zor — kelimenin günlük dildeki sıklığına göre. */
+  difficulty: number;
+}
+
+export interface WordQuery {
+  count?: number;
+  minLength?: number;
+  maxLength?: number;
+  /** Boş bırakılırsa üç zorluk da gelir. */
+  difficulty?: number[];
+}
+
+export interface WordCheck {
+  word: string;
+  valid: boolean;
+  length?: number;
+  difficulty?: number | null;
+  inPool?: boolean;
+}
